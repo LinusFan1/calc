@@ -1,3 +1,4 @@
+CFLAGS = -g
 main: main.c
-	gcc -o main main.c -lm
+	gcc -o main $(CFLAGS) main.c -lm
 

@@ -2,24 +2,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define BUFF_SIZE 1024
 #define TOK_DELIM " "
 
-char* parseToks(){
-int i = 0;
-char *buffer = malloc(sizeof(char)*BUFF_SIZE);
-int c;
-	while(1){
-		c = getchar();
-		if(c == EOF || c == '\n'){
-			buffer[i] = '\0';
-		}
-		else{
-			buffer[i] = c;
-		}
-		i++;
-	}
+bool operatorCheck(char* input){
+return (strcmp(input,"+") == 0 || strcmp(input,"-") == 0 || strcmp(input,"*") == 0 || strcmp(input,"/") == 0 || strcmp(input,"^") == 0 || strcmp(input,"%") == 0);
 }
 
 char** parseString(char* input){
@@ -40,67 +29,126 @@ tokens[i] = NULL;
 return tokens;
 }
 
-void switchArray(){
-
+void ctruncArr(char** arr, char* input, int i, int j){
+//printf("index: %d\n", i);
+char* temp;
+strcpy(arr[i],input);
+i = i+j+1;
+while(arr[i] != NULL){
+temp = arr[i];
+//printf("temp: %s at index: %d\n",temp,i);
+arr[i-j] = temp;
+i++;
+}
+for(j; j > 0; j--){
+arr[i-j] = NULL;
+}	
 }
 
 int calc(char** input){
 int i = 0;
+char* tempChar = malloc(sizeof(char) * BUFF_SIZE);
+bool operator;
+int output;
+for(int j = 0; j < 3; j++){
+i = 0;
 while(input[i] != NULL){
-	printf("%s\n",input[i]);
+//	printf("Value: %s at index: %d\n",input[i],i);
 	i++;
 }
-i = 0;
-int output;
-while(input[i] != NULL){
-	if(strcmp(input[i],"+") == 0 || strcmp(input[i],"-") == 0 || strcmp(input[i],"*") == 0 || strcmp(input[i],"/") == 0 || strcmp(input[i],"^") == 0 || strcmp(input[i],"%") == 0){
-	if(strcmp(input[i+1],"+") == 0 || strcmp(input[i+1],"-") == 0 || strcmp(input[i+1],"*") == 0 || strcmp(input[i+1],"/") == 0 || strcmp(input[i+1],"^") == 0 || strcmp(input[i+1],"%") == 0 || input[i+1] == NULL){
+	i = 0;
+	while(input[i] != NULL){
+	if(operatorCheck(input[i])){
+	if(operatorCheck(input[i+1])){
 		fprintf(stderr, "Arithmetic Error");
 		exit(EXIT_FAILURE);	
 	}
-	printf("%s\n",input[i-1]);
-	printf("%s\n",input[i+1]);
-		switch(input[i][0]){
-		case '^':
-			output = pow(atoi(input[i-1]),atoi(input[i+1]));
+//	printf("Numbers Being Evaluated at index i: %d & j: %d\n",i,j);
+//	printf("%s\n",input[i-1]);
+//	printf("%s\n",input[i+1]);
+	operator = true;
+	switch(j){
+		case 0:
+			switch(input[i][0]){
+			case '^':
+				output = pow(atoi(input[i-1]),atoi(input[i+1]));
+			break;
+			case '%':
+				output = atoi(input[i-1]) % atoi(input[i+1]);
+			break;
+			default:
+				operator = false;
+			break;
+			}
 		break;
-		case '%':
-			output = atoi(input[i-1]) % atoi(input[i+1]);
+		case 1:
+			switch(input[i][0]){
+			case '*':
+				output = atoi(input[i-1]) * atoi(input[i+1]);
+			break;
+			case '/':
+				output = atoi(input[i-1]) / atoi(input[i+1]);
+			break;
+			default:
+				operator = false;
+			break;
+			}
 		break;
-		case '*':
-			output = atoi(input[i-1]) * atoi(input[i+1]);
-		break;
-		case '/':
-			output = atoi(input[i-1]) / atoi(input[i+1]);
-		break;
-		case '+':
-			output = atoi(input[i-1]) + atoi(input[i+1]);
-		break;
-		case '-':
-			output = atoi(input[i-1]) - atoi(input[i+1]);
+		case 2:
+			switch(input[i][0]){
+			case '+':
+				output = atoi(input[i-1]) + atoi(input[i+1]);
+			break;
+			case '-':
+				output = atoi(input[i-1]) - atoi(input[i+1]);
+			break;
+			default:
+				operator = false;
+			break;
+			}
 		break;
 		default:
-			fprintf(stderr, "Unrecongnized Operator");
+			fprintf(stderr, "Out Of Bounds index");
 			exit(EXIT_FAILURE);
 			break;
 		}
-		snprintf(input[i+1], (int)(log10(output) * sizeof(char)), "%d", output);
+		if(operator){
+		snprintf(tempChar, (int)((ceil(log10(output)) + 1) * sizeof(char)), "%d", output);
+	//	printf("Output:%s\n",tempChar);
+		ctruncArr(input,tempChar,(i-1),2);
+		i -= 2;
+		}
 		i += 2;
 	}
 	else{
 		i++;
 	}
 }
+}
 return output;
 }
 
 int main(){
-printf("Calc Program\n");
 char* input = malloc(sizeof(char) * BUFF_SIZE);
+while(1){
+printf("Calc Program\n");
 fgets(input, BUFF_SIZE, stdin);
 char** parsedInput = parseString(input);
+int i =0;
+if(strcmp(input,"exit") == 0 || strcmp(input,"Exit") == 0){
+	fprintf(stdout, "Exiting Calc....\n");
+	exit(EXIT_SUCCESS);
+}
+while(parsedInput[i] != NULL){
+if((!operatorCheck(parsedInput[i])) && (((int)parsedInput[i][0] < 47) || ((int)parsedInput[i][0] > 57))){
+fprintf(stderr, "Unrecognized Operator\n");
+exit(EXIT_FAILURE);
+}
+i++;
+}
 int j = 0;
 j = calc(parsedInput);
-printf("%d", j);
+printf("%d\n", j);
+}
 return 0;
 }
